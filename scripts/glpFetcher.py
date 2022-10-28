@@ -28,7 +28,6 @@ class GLPDataFetcher:
         infura_api_url = infura_api_url + infura_api_key
 
         self.gmx_index_assets = gmx_index_assets
-
         self.conn = Web3(HTTPProvider(infura_api_url))
         self.wallet_adr = wallet_adr
         self.tokens_info = self._get_tokens_info()

@@ -2,17 +2,21 @@ from apscheduler.schedulers.blocking import BlockingScheduler  # type: ignore
 import MySQLdb as mdb  # type: ignore
 from dataProcessor import BalanceProcessor
 from binanceAccountFetcher import BinanceAccountInfo
-from typing import Dict, List
+from typing import Dict, List, Any
 import datetime
 from util.binancePairsEnumType import BinancePairsEnumType
 import time
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 
 class DatabaseInserter:
-    def __init__(self, db_host: str = 'localhost',
-                 db_user: str = 'sec_user',
-                 db_pass: str = 'password',
-                 db_name: str = 'glp_database'
+    def __init__(self, db_host: Any = os.getenv('DB_HOST'),
+                 db_user: Any = os.getenv('DB_USER'),
+                 db_pass: Any = os.getenv('DB_PASS'),
+                 db_name: Any = os.getenv('DB_NAME')
                  ):
         self.db_host = db_host
         self.db_user = db_user
@@ -127,7 +131,7 @@ class DatabaseInserter:
                                   0])
         return data_list
 
-    def insert_metamask_account(self) -> object:
+    def insert_metamask_account(self):
         table = 'metamask_account'
         columns_str = (
             'created_date, updated_date, amount, '
@@ -154,6 +158,7 @@ class DatabaseInserter:
                               metamask_dict['notional'][token], token])
         return data_list
 
+
 if __name__ == '__main__':
     start = time.time()
     test = DatabaseInserter()
@@ -162,4 +167,5 @@ if __name__ == '__main__':
     print(test.insert_binance_hedge_account())
     print(test.insert_summary_total_balance())
     print(time.time() - start)
+
 

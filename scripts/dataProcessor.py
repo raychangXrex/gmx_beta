@@ -36,7 +36,7 @@ class BalanceProcessor:
 
         self.gmx_fetcher = GLPDataFetcher(infura_api_key=self.infura_api_key,
                                           wallet_adr=self.wallet_adr,
-                                          GMX_index_asset=self.gmx_index_assets
+                                          gmx_index_assets=self.gmx_index_assets
                                           )
 
         self.metamask_fetcher = MetamaskInfoFetcher(infura_api_key=self.infura_api_key,
