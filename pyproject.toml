@@ -16,6 +16,7 @@ APScheduler = "^3.9.1"
 mysqlclient = "^2.1.1"
 jupyter = "^1.0.0"
 ccxt = "^1.95.11"
+python-dotenv = "^0.21.0"
 
 
 [build-system]
