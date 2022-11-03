@@ -2,7 +2,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler  # type: ignore
 import MySQLdb as mdb  # type: ignore
 from dataProcessor import BalanceProcessor
 from binanceAccountFetcher import BinanceAccountInfo
-from typing import Dict, List, Any
+from typing import List, Any, Dict
 import datetime
 from util.binancePairsEnumType import BinancePairsEnumType
 import time
@@ -97,9 +97,9 @@ class DatabaseInserter:
         table = 'gmx_account'
         columns_str = (
             'created_date, updated_date, position_amount, '
-            'notional, symbol, claimable, cumulative'
+            'notional, symbol'
         )
-        insert_string = ('%s, ' * 7)[:-2]
+        insert_string = ('%s, ' * 5)[:-2]
         final_string = f'INSERT INTO {table} ({columns_str}) VALUES ({insert_string})'
         data = self._obtain_gmx_account_data()
         cur = self.con.cursor()
@@ -108,7 +108,6 @@ class DatabaseInserter:
 
     def _obtain_gmx_account_data(self):
         gmx_dict = self.processor.gmx_summary
-        claimable_dict = self.processor.get_claimable_info()
         data_list: List = []
 
         tokens = gmx_dict['notional'].keys()
@@ -116,19 +115,9 @@ class DatabaseInserter:
         for token in tokens:
             created_time = self.created_time
             updated_time = self.updated_time
+            data_list.append([created_time, updated_time, gmx_dict['amount'][token],
+                              gmx_dict['notional'][token], token])
 
-            if token == 'WETH':
-                data_list.append([created_time, updated_time, gmx_dict['amount'][token],
-                                  gmx_dict['notional'][token], token, claimable_dict['weth_claimable'],
-                                  claimable_dict['weth_cumulative']])
-            elif token == 'esGMX':
-                data_list.append([created_time, updated_time, gmx_dict['amount'][token],
-                                  gmx_dict['notional'][token], token, claimable_dict['esgmx_claimable'],
-                                  claimable_dict['esgmx_cumulative']])
-            else:
-                data_list.append([created_time, updated_time, gmx_dict['amount'][token],
-                                  gmx_dict['notional'][token], token, 0,
-                                  0])
         return data_list
 
     def insert_metamask_account(self):
@@ -158,14 +147,52 @@ class DatabaseInserter:
                               metamask_dict['notional'][token], token])
         return data_list
 
+    def insert_gmx_total(self):
+        table = 'gmx_total'
+        columns_str = (
+            'created_date, updated_date, long_positions, short_positions, '
+            'reward_esgmx_amount, reward_weth_amount, reward_esgmx_notional, reward_weth_notional,'
+            'reward_esgmx_cumulative_amount, reward_weth_cumulative_amount, reward_esgmx_cumulative_notional, '
+            'reward_weth_cumulative_notional'
+        )
+        insert_string = ('%s, ' * 12)[:-2]
+        final_string = f'INSERT INTO {table} ({columns_str}) VALUES ({insert_string})'
+        data = self._obtain_gmx_toal_data()
+        cur = self.con.cursor()
+        cur.execute(final_string, data)
+        self.con.commit()
+
+    def _obtain_gmx_toal_data(self):
+        claimable_dict = self.processor.get_claimable_info()
+        data_list: List = []
+        long_short: Dict = self.processor.get_long_short()
+
+        created_time = self.created_time
+        updated_time = self.updated_time
+        long_positions = long_short['long_positions']
+        short_positions = long_short['short_positions']
+        reward_esgmx_amount = claimable_dict['esgmx_claimable']
+        reward_weth_amount = claimable_dict['weth_claimable']
+        reward_esgmx_notional = reward_esgmx_amount * 0
+        reward_weth_notional = self.processor.price_dict_gmx['WETH'] * reward_weth_amount
+        reward_esgmx_cumulative_amount = claimable_dict['esgmx_cumulative']
+        reward_weth_cumulative_amount = claimable_dict['weth_cumulative']
+        reward_esgmx_cumulative_notional = reward_esgmx_cumulative_amount * 0
+        reward_weth_cumulative_notional = self.processor.price_dict_gmx['WETH'] * reward_esgmx_cumulative_amount
+
+        data_list = [created_time, updated_time, long_positions, short_positions, reward_esgmx_amount,
+                     reward_weth_amount, reward_esgmx_notional, reward_weth_notional, reward_esgmx_cumulative_amount,
+                     reward_weth_cumulative_amount, reward_esgmx_cumulative_notional, reward_weth_cumulative_notional]
+
+        return data_list
+
 
 if __name__ == '__main__':
     start = time.time()
     test = DatabaseInserter()
-    print(test.insert_metamask_account())
+    # print(test.insert_metamask_account())
     print(test.insert_gmx_account())
-    print(test.insert_binance_hedge_account())
-    print(test.insert_summary_total_balance())
+    # print(test.insert_binance_hedge_account())
+    # print(test.insert_summary_total_balance())
+    # print(test.insert_gmx_total())
     print(time.time() - start)
-
-

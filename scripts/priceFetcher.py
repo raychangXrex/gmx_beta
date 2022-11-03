@@ -151,6 +151,7 @@ class PriceFetcher:
         return funding_dict
 
 
+
 if __name__ == '__main__':
     start_time = time.time()
     test = PriceFetcher()

@@ -42,7 +42,7 @@ class GLPDataFetcher:
         glp_total_supply = glp_contract.functions.totalSupply().call()
         return glp_total_supply  / 10 ** TokenDecimalsEnumType.GLP.value
 
-    def get_claimable_info(self):
+    def get_claimable_info(self) -> Dict[str, float]:
         reward_reader = self.conn.eth.contract(address=ContractAddressEnumType.RewardReader.value,
                                                 abi=ContractAbiEnumType.RewardReader.value)
         address_list = [ContractAddressEnumType.StakedGmxTracker.value,
@@ -53,15 +53,15 @@ class GLPDataFetcher:
         response = reward_reader.functions.getStakingInfo(self.wallet_adr, address_list).call()
         response = [amount / 10**18 for amount in response]
 
-        weth_claimable = response[5] + response[10]
-        weth_cumalative = response[8] + response[13]
-        esgmx_claimable = response[0] + response[15]
-        esgmx_cumalative = response[3] + response[18]
-        # print(response)
+        weth_claimable: float = response[5] + response[10]
+        weth_cumalative: float = response[8] + response[13]
+        esgmx_claimable: float = response[0] + response[15]
+        esgmx_cumalative: float = response[3] + response[18]
+
         return {'weth_claimable':weth_claimable, 'weth_cumulative':weth_cumalative, 'esgmx_claimable':esgmx_claimable,
                 'esgmx_cumulative':esgmx_cumalative}
 
-    def get_glp_price(self) -> Dict:
+    def get_glp_price(self) -> Dict[str, float]:
         glp_manager = self.conn.eth.contract(address=ContractAddressEnumType.GLPManager.value,
                                              abi=ContractAbiEnumType.GLPManager.value)
         glp_supply = self._glp_supply
@@ -99,7 +99,7 @@ class GLPDataFetcher:
         price_dict = PriceFetcher.get_assets_price_gmx()
 
         for symbol, amount in pool_amount_dict.items():
-            total_value +=  amount * price_dict[symbol]
+            total_value += amount * price_dict[symbol]
 
         for symbol, amount in  pool_amount_dict.items():
             exposure = amount * price_dict[symbol] / total_value
@@ -187,7 +187,6 @@ class GLPDataFetcher:
     def get_assets_amounts_summary(self):
         exposure_amount = self.get_exposure_amount()
 
-
         return {'GMX':self.get_staked_gmx_amount(),
                 'esGMX':self.get_staked_esgmx_amount(),
                 'GLP':self._staked_glp_amount,
@@ -200,10 +199,29 @@ class GLPDataFetcher:
                 'USDC':exposure_amount['USDC'],
                 'DAI':exposure_amount['DAI']}
 
+    def get_long_short(self) -> Dict[str, float]:
+        token_info:Dict[str, Dict] = self.tokens_info
+        long: float = 0
+        short: float = 0
+        long_list: Tuple[str] = ('WBTC', 'WETH', 'LINK', 'UNI')
+        short_list: Tuple[str] = ('FRAX', 'DAI', 'USDC', 'USDT')
+
+        for token, info in token_info.items():
+            notional = info['reserved_amount'] * info['price_not_maximised']
+
+            if token in long_list:
+                long += notional
+            elif token in short_list:
+                short += notional
+
+        return {'long_positions': long, 'short_positions': short}
+
+
+
 if __name__ == '__main__':
     start_time = time.time()
     test = GLPDataFetcher()
-
+    print(test.get_long_short())
 
     print(test. get_assets_amounts_summary())
     print(f'process time is: {time.time() - start_time}')

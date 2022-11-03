@@ -150,6 +150,11 @@ class BalanceProcessor:
     def get_claimable_info(self):
         return self.gmx_fetcher.get_claimable_info()
 
+    def get_long_short(self):
+        return self.gmx_fetcher.get_long_short()
+
+
+
 
 if __name__ == '__main__':
     start_time = time.time()

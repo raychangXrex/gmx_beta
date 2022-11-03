@@ -13,10 +13,11 @@ def update_database():
         updater.insert_gmx_account()
         updater.insert_binance_hedge_account()
         updater.insert_metamask_account()
+        updater.insert_gmx_total()
 
-    except BaseException:
+    except Exception as e :
         print(f'Update fails at {datetime.datetime.now()}')
-
+        raise e
     print(f'Update succeeds, It takes {time.time() - start_time}')
 
 
